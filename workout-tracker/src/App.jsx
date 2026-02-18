@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import './App.css'
-import LoginButton from './components/loginButton.jsx';
-import LogoutButton from './components/logoutButton.jsx';
-import React from 'react';
-import Profile from './components/profile.jsx';
+import HomePage from './components/HomePage.jsx';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LoginPage from './components/loginPage.jsx';
 import { useAuth0 } from '@auth0/auth0-react';
-import NavBar from './components/NavBar.jsx';
+import ProfilePage from './components/profile.jsx';
 
 function App() {
   const { isLoading, error } = useAuth0();
@@ -16,19 +15,13 @@ function App() {
 
   return (
     <>
-      <div className="container mx-auto p-4 border border-gray-300 rounded-lg shadow-md bg-gray-100">
-        <NavBar />
-        <h1 className='text-red-500 mx-auto'>Workout Tracker</h1>
-        {error && <p>Authentication error</p>}
-        {!error && isLoading && <p>Loading...</p>}
-        {!error && !isLoading &&
-        <> 
-          <LoginButton />
-          <LogoutButton />
-          <Profile />
-        </>
-        }
-      </div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
+      </Router>
     </>
   )
 }

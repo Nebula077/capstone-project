@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@coreui/icons-react": "^2.3.0",
+    "react-icons": "^5.5.0"
+  }
+}
