@@ -1,29 +1,43 @@
-import { useState } from 'react'
-import './App.css'
+import './App.css';
 import HomePage from './components/HomePage.jsx';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProfilePage from './components/profile.jsx';
 import SignUp from './components/signUp.jsx';
+import LoginPage from './components/loginPage.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
 
-function App() {
-  const { isLoading, error } = useState(false);
-
-  if (isLoading) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
-  return (
-    <>
-      <Router>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/signup" element={<SignUp />} />
-        </Routes>
-      </Router>
-    </>
-  )
+  if (!user) {
+    return <Navigate to="/signup" replace />;
+  }
+
+  return children;
 }
 
-export default App
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/profile"
+          element={(
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;

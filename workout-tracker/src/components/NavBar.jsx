@@ -23,7 +23,7 @@ function NavBar() {
 
   return (
     <>
-      <CNavbar expand="lg" className="bg-body-tertiary">
+      <CNavbar expand="lg" className="bg-body-tertiary border-bottom border-gray-300 p-1 min-h-default">
         <CContainer fluid>
           <CNavbarBrand href="#">Workout Tracker</CNavbarBrand>
           <CNavbarToggler onClick={() => setVisible(!visible)} />
@@ -67,7 +67,7 @@ function NavBar() {
                 color="link"
                 style={{ fontSize: '1.5rem' }}
               >
-                <CiUser href='Profile'/>
+                <CiUser />
               </CButton>
             </div>
           </CCollapse>
