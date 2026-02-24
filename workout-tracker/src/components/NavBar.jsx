@@ -12,6 +12,11 @@ import {
   CNavbarToggler,
   CNavItem,
   CNavLink,
+  CDropdown,
+  CDropdownDivider,
+  CDropdownItem,
+  CDropdownMenu,
+  CDropdownToggle,
 } from '@coreui/react'
 import { IoNotifications } from 'react-icons/io5'
 import { CiUser } from 'react-icons/ci'
@@ -25,26 +30,49 @@ function NavBar() {
     <>
       <CNavbar expand="lg" className="bg-body-tertiary border-bottom border-gray-300 p-1 min-h-default">
         <CContainer fluid>
-          <CNavbarBrand href="#">Workout Tracker</CNavbarBrand>
+          <CNavbarBrand>
+            <Link to="/" className="text-decoration-none text-dark">
+              Workout Tracker
+            </Link>
+          </CNavbarBrand>
           <CNavbarToggler onClick={() => setVisible(!visible)} />
           <CCollapse className="navbar-collapse" visible={visible}>
             <CNavbarNav className="me-auto">
               <CNavItem>
-                <CNavLink href="Profile" active>
+                <Link to="/" className="nav-link">
                   Home
-                </CNavLink>
+                </Link>
               </CNavItem>
               <CNavItem>
-                <CNavLink href="#">Link</CNavLink>
+                <Link to="/exercises" className="nav-link">
+                  Exercises
+                </Link>
               </CNavItem>
               <CNavItem>
-                <CNavLink href="#">Pricing</CNavLink>
+                <Link to="/add-exercise" className="nav-link">
+                  Add Exercise
+                </Link>
               </CNavItem>
               <CNavItem>
-                <CNavLink href="#" disabled>
-                  Disabled
-                </CNavLink>
+                <Link to="/profile" className="nav-link">
+                  Profile
+                </Link>
               </CNavItem>
+              <CDropdown variant="nav-item" popper={false}>
+                <CDropdownToggle color="secondary">More</CDropdownToggle>
+                <CDropdownMenu>
+                  <CDropdownItem component={Link} to="/add-exercise">
+                    Add Exercise
+                  </CDropdownItem>
+                  <CDropdownItem component={Link} to="/exercises">
+                    View Exercises
+                  </CDropdownItem>
+                  <CDropdownDivider />
+                  <CDropdownItem component={Link} to="/login">
+                    Login
+                  </CDropdownItem>
+                </CDropdownMenu>
+              </CDropdown>
             </CNavbarNav>
             <CForm className="d-flex me-3">
               <CFormInput type="search" className="me-2" placeholder="Search" />

@@ -5,6 +5,8 @@ import ProfilePage from './components/profile.jsx';
 import SignUp from './components/signUp.jsx';
 import LoginPage from './components/loginPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
+import AddExercise from './components/AddExercise.jsx';
+import Exercises from './components/Exercises.jsx';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -35,6 +37,8 @@ function App() {
         />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/add-exercise" element={<AddExercise />} />
+        <Route path="/exercises" element={<Exercises />} />
       </Routes>
     </Router>
   );
