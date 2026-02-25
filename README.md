@@ -4,11 +4,22 @@ A modern, responsive web application for tracking and managing your fitness work
 
 ## 🎯 Features
 
-- **User Authentication**: Email/password signup and username-based login powered by Supabase
-- **Workout Management**: Create, view, and track your workouts
+- **User Authentication**: Email/password signup and username-based login powered by Supabase (profiles stored in a `profiles` table with username, full name, and bio)
+- **Exercise Library**: Browse exercises from the WGER public API with images, muscles, categories, and pagination (25 per page)
+- **Search & Results**:
+	- Global search from the navbar
+	- Results page with three tabs: **WGER**, **My Saved**, and **Info** (Wikipedia summary like "push up exercise")
+- **Workout Management**:
+	- Save WGER exercises (including images and muscles) to a `user_exercises` table
+	- Scheduled/Upcoming workouts shown on the Home page with basic details and thumbnails
+	- Mark workouts as completed (tracked with `completed` and `completed_at`)
+- **Profile & Editing**:
+	- Profile page showing username, email, and saved exercises
+	- Edit Profile form to update username, full name, and bio
+	- Completed activities carousel showing previously completed workouts
 - **Responsive Design**: Fully responsive UI that works on desktop, tablet, and mobile devices
 - **Fast Performance**: Built with Vite for lightning-fast development and production builds
-- **Modern Styling**: Tailwind CSS for clean, utility-first styling
+- **Modern Styling**: Tailwind CSS and CoreUI for clean, utility-first styling
 
 ## 🛠️ Tech Stack
 
@@ -30,11 +41,17 @@ workout-tracker/
 │   ├── index.css            # Global styles
 │   ├── assets/              # Static assets
 │   └── components/
-│       ├── NavBar.jsx        # Navigation bar
-│       ├── HomePage.jsx      # Landing page
-│       ├── signUp.jsx        # Supabase signup (email/password + username)
-│       ├── loginPage.jsx     # Username + password login
-│       └── Profile.jsx       # User profile component
+│       ├── NavBar.jsx        # Navigation bar with global search and profile link
+│       ├── HomePage.jsx      # Landing page, upcoming workouts, saved and previous workouts
+│       ├── Exercises.jsx     # WGER exercise library with pagination and save-to-Supabase
+│       ├── Results.jsx       # Search results (WGER, My Saved, Info/Wikipedia)
+│       ├── signUp.jsx        # Supabase signup (email/password + username, full name, bio)
+│       ├── loginPage.jsx     # Username + password login (username resolved to email)
+│       ├── Profile.jsx       # User profile, completed activities carousel, saved exercises
+│       └── EditProfile.jsx   # Edit profile form (username, full name, bio)
+│
+│   └── utils/
+│       └── saveUserExercise.js # Shared helper to persist WGER exercises into user_exercises
 ├── public/                  # Static files
 ├── index.html               # HTML entry point
 ├── package.json             # Dependencies & scripts
@@ -109,13 +126,19 @@ This project uses functional components with React Hooks:
 - **Auth Context**: `AuthContext` provides Supabase session, profile (username), and auth helpers
 - **Props-based Communication**: Simple unidirectional data flow
 
-## 🔐 Authentication
+## 🔐 Authentication & Data
 
-The app uses Supabase Auth:
+The app uses Supabase for both authentication and data storage:
 
-- Signup with email, password, and a username (stored in a `profiles` table)
-- Login with username + password (resolved to email behind the scenes)
-- Profile view shows username/email and allows sign out
+- **Auth**:
+	- Signup with email, password, username, full name, and optional bio
+	- Login with username + password (Supabase resolves username → email via `profiles`)
+	- Profile view shows username/email and allows sign out
+
+- **Database Tables (core)**:
+	- `profiles`: `id`, `email`, `username`, `full_name`, `bio`
+	- `user_exercises`: `user_id`, `exercise_id`, `name`, `category`, `description`, `images` (JSON array of URLs), `muscles` (JSON array), `completed`, `completed_at`
+	- `exercises`: custom exercises created by the user (used on Home/Profile)
 
 Environment variables (set in `.env.local`):
 
