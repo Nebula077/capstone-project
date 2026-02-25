@@ -12,10 +12,12 @@ function Results() {
   const BASE_URL = import.meta.env.VITE_WGER_API_BASE_URL || 'https://wger.de/api/v2/';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [source, setSource] = useState('wger'); // 'wger' | 'saved'
+  const [source, setSource] = useState('wger'); // 'wger' | 'saved' | 'info'
   const [loading, setLoading] = useState(false);
   const [wgerResults, setWgerResults] = useState([]);
   const [userResults, setUserResults] = useState([]);
+  const [infoResult, setInfoResult] = useState(null);
+  const [infoError, setInfoError] = useState(null);
 
   // Read query + source from URL
   useEffect(() => {
@@ -24,7 +26,7 @@ function Results() {
     const src = params.get('source') || 'wger';
 
     setSearchQuery(q);
-    setSource(src === 'saved' ? 'saved' : 'wger');
+    setSource(src === 'saved' || src === 'info' ? src : 'wger');
   }, [location.search]);
 
   // Fetch WGER exercises and filter by searchQuery
@@ -99,6 +101,45 @@ function Results() {
     }
   }, [user, searchQuery, source]);
 
+  // Fetch short info (Wikipedia summary) for the exercise name
+  useEffect(() => {
+    if (!searchQuery) {
+      setInfoResult(null);
+      setInfoError(null);
+      return;
+    }
+
+    const fetchInfo = async () => {
+      try {
+        setLoading(true);
+        setInfoError(null);
+        setInfoResult(null);
+
+        const response = await fetch(
+          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+            searchQuery 
+          )}`
+        );
+
+        if (!response.ok) {
+          throw new Error('No additional info found.');
+        }
+
+        const data = await response.json();
+        setInfoResult(data);
+      } catch (error) {
+        console.error('Error fetching info:', error);
+        setInfoError(error.message || 'Could not load info.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (source === 'info') {
+      fetchInfo();
+    }
+  }, [searchQuery, source]);
+
   const handleAddExercise = async (exercise) => {
     if (!user) {
       alert('Please log in to save exercises.');
@@ -167,6 +208,14 @@ function Results() {
             onClick={() => setSource('saved')}
           >
             My Saved
+          </button>
+          <button
+            className={`px-3 py-2 rounded ${
+              source === 'info' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+            onClick={() => setSource('info')}
+          >
+            Info
           </button>
         </div>
 
@@ -239,6 +288,39 @@ function Results() {
             <p className="text-gray-700">Description: {exercise.description}</p>
           </div>
         ))}
+
+        {!loading && source === 'info' && (
+          <div className="p-4 bg-gray-100 rounded-lg shadow-sm mt-4">
+            {infoError && (
+              <p className="text-red-600 text-sm">{infoError}</p>
+            )}
+            {!infoError && !infoResult && (
+              <p className="text-gray-700 text-sm">No additional information available.</p>
+            )}
+            {infoResult && (
+              <div className="flex flex-col md:flex-row gap-4">
+                {infoResult.thumbnail?.source && (
+                  <img
+                    src={infoResult.thumbnail.source}
+                    alt={infoResult.title}
+                    className="w-full md:w-48 h-48 object-cover rounded-md"
+                  />
+                )}
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">{infoResult.title}</h3>
+                  {infoResult.description && (
+                    <p className="text-sm text-gray-600 mb-2">
+                      {infoResult.description}
+                    </p>
+                  )}
+                  <p className="text-gray-700 text-sm whitespace-pre-line">
+                    {infoResult.extract}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <Footer />
     </div>

@@ -22,6 +22,7 @@ import { IoNotifications } from 'react-icons/io5'
 import { CiUser } from 'react-icons/ci'
 import '@coreui/coreui/dist/css/coreui.min.css'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx';
 
 function NavBar() {
   const [visible, setVisible] = useState(false)
@@ -29,6 +30,7 @@ function NavBar() {
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
   const { query } = useParams()
+  const user = useAuth().user
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -83,7 +85,7 @@ function NavBar() {
                   </CDropdownItem>
                   <CDropdownDivider />
                   <CDropdownItem component={Link} to="/login">
-                    Login
+                    {user ? "Profile" : "Login"}
                   </CDropdownItem>
                 </CDropdownMenu>
               </CDropdown>

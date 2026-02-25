@@ -131,6 +131,20 @@ function HomePage() {
                         <p className='text-gray-700'>Category: {ex.category}</p>
                         <p className='text-gray-700'>Duration: {ex.duration}</p>
                         <p className='text-gray-700'>Muscles: {ex.muscles}</p>
+
+                        {Array.isArray(ex.images) && ex.images.length > 0 && (
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 object-cover lg:grid-cols-4 lg:gap-6 sm:gap-4 xs:grid-cols-1">
+                            {ex.images.slice(0, 2).map((url, idx) => (
+                              <img
+                                key={idx}
+                                src={url}
+                                alt={ex.name}
+                                className="w-full h-48 object-cover rounded-md mb-2"
+                              />
+                            ))}
+                          </div>
+                        )}
+
                         <span className='text-red-500'>For more details search the exercise</span>
                       </div>
                       <div className='flex-1 gap-2 mt-5 justify-end flex'>

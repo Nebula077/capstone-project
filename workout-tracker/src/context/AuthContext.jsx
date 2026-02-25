@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
 
             const { data, error } = await supabase
                 .from("profiles")
-                .select("username,email")
+                .select("username,email,full_name,bio")
                 .eq("id", session.user.id)
                 .maybeSingle();
 
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const signUpWithEmailPassword = async ({ email, password, username }) => {
+    const signUpWithEmailPassword = async ({ email, password, username, bio = "", fullName = "" }) => {
         setAuthError(null);
         const { data, error } = await supabase.auth.signUp({
             email,
@@ -86,15 +86,18 @@ export function AuthProvider({ children }) {
             throw error;
         }
 
-        // Persist username in a profiles table (must exist with a unique username column)
+        // Persist profile data
         if (data?.user) {
             const { error: profileError } = await supabase.from("profiles").insert({
                 id: data.user.id,
                 email,
                 username,
+                bio: bio || null,
+                full_name: fullName || null,
             });
             if (profileError) {
-                setAuthError(profileError.message);
+                console.error("Profile insert error details:", profileError);  // ← ADD THIS
+                setAuthError(`Profile creation failed: ${profileError.message}`);
                 throw profileError;
             }
         }
@@ -114,11 +117,13 @@ export function AuthProvider({ children }) {
 
     const signInWithUsernamePassword = async ({ username, password }) => {
         setAuthError(null);
-        // Look up the email for this username
+
+        const normalized = username.trim().toLowerCase();
+
         const { data, error } = await supabase
             .from("profiles")
             .select("email")
-            .eq("username", username)
+            .ilike("username", normalized)   // case-insensitive
             .maybeSingle();
 
         if (error) {
@@ -144,18 +149,22 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const value = useMemo(() => ({
-        user: session?.user ?? null,
-        session,
-        loading,
-        authError,
-        signInWithEmailOtp,
-        signUpWithEmailPassword,
-        signInWithEmailPassword,
-        signInWithUsernamePassword,
-        signOut,
-        profile,
-    }), [session, loading, authError, profile]);
+    const value = useMemo(
+        () => ({
+            user: session?.user ?? null,
+            session,
+            loading,
+            authError,
+            signInWithEmailOtp,
+            signUpWithEmailPassword,
+            signInWithEmailPassword,
+            signInWithUsernamePassword,
+            signOut,
+            profile,
+            setProfile,     
+        }),
+        [session, loading, authError, profile]
+    );
 
     return (
         <AuthContext.Provider value={value}>
