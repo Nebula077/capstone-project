@@ -21,10 +21,24 @@ import {
 import { IoNotifications } from 'react-icons/io5'
 import { CiUser } from 'react-icons/ci'
 import '@coreui/coreui/dist/css/coreui.min.css'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 function NavBar() {
   const [visible, setVisible] = useState(false)
+  const [term, setTerm] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
+  const { query } = useParams()
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    const q = term.trim()
+    if (!q) return
+
+    setSearchQuery(q)
+    navigate(`/results?query=${encodeURIComponent(q)}&source=wger`)
+    setVisible(false)
+  }
 
   return (
     <>
@@ -74,8 +88,14 @@ function NavBar() {
                 </CDropdownMenu>
               </CDropdown>
             </CNavbarNav>
-            <CForm className="d-flex me-3">
-              <CFormInput type="search" className="me-2" placeholder="Search" />
+            <CForm className="d-flex me-3" onSubmit={handleSearch}>
+              <CFormInput
+                type="search"
+                className="me-2"
+                placeholder="Search"
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+              />
               <CButton type="submit" color="success" variant="outline">
                 Search
               </CButton>
@@ -92,8 +112,9 @@ function NavBar() {
                 </span>
               </CButton>
               <CButton
-                color="link"
                 style={{ fontSize: '1.5rem' }}
+                component={Link}
+                to="/profile"
               >
                 <CiUser />
               </CButton>

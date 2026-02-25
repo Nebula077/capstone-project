@@ -6,12 +6,14 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Formik } from 'formik';
 import supabase from '../../supabase-client';
+import { useNavigate } from 'react-router-dom';
 
 function AddExercise() {
 
 const { user } = useAuth();
 const BASE_URL = import.meta.env.VITE_WGER_API_BASE_URL || 'https://wger.de/api/v2/';
 const [categories, setCategories] = useState([]);
+const navigate = useNavigate();
 
 const getCategories = async () => {
     try {
@@ -80,12 +82,15 @@ const getCategories = async () => {
                         <label htmlFor="category" className='block text-grey-500 font-bold md:text-right mb-1 md:mb-0 pr-4'>Category:</label>
                         <input type="text" id="category" name="category" value={values.category} onChange={handleChange} className="w-full px-3 py-2 border rounded" />
                         </div>
-                        <div>
-                        <button type="submit" className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded' >Submit</button>
+                        <div className='flex mx-auto gap-4 justify-center'>
+                                <button type="submit" className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded' >Submit</button>
                         </div>
                     </form>
                 )}
             </Formik>
+            <div>
+                <button className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded p-1 mx-auto mb-2' onClick={() => navigate('/exercises')}>Add From Exercises</button>
+            </div>
         </div>
       </div>
       <Footer />

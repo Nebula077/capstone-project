@@ -20,7 +20,6 @@ function Profile() {
                 .from('exercises')
                 .select('*')
                 .eq('user_id', user.id);
-                console.log(data);
 
             if (error) {
                 console.error('Error fetching user exercises:', error);

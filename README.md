@@ -1,10 +1,10 @@
 # Workout Tracker
 
-A modern, responsive web application for tracking and managing your fitness workouts. Built with React, Vite, and Tailwind CSS.
+A modern, responsive web application for tracking and managing your fitness workouts. Built with React, Vite, Tailwind CSS, and Supabase authentication.
 
 ## 🎯 Features
 
-- **User Authentication**: Secure login/logout with Auth0 integration
+- **User Authentication**: Email/password signup and username-based login powered by Supabase
 - **Workout Management**: Create, view, and track your workouts
 - **Responsive Design**: Fully responsive UI that works on desktop, tablet, and mobile devices
 - **Fast Performance**: Built with Vite for lightning-fast development and production builds
@@ -15,7 +15,7 @@ A modern, responsive web application for tracking and managing your fitness work
 - **Frontend Framework**: React 19.2.0 with Hooks
 - **Build Tool**: Vite 7.2.4
 - **Styling**: Tailwind CSS
-- **Authentication**: Auth0
+- **Authentication**: Supabase Auth (email/password + username login)
 - **Code Quality**: ESLint 9.39.1
 - **Development**: React Fast Refresh (Hot Module Replacement)
 
@@ -30,8 +30,10 @@ workout-tracker/
 │   ├── index.css            # Global styles
 │   ├── assets/              # Static assets
 │   └── components/
-│       ├── loginButton.jsx   # Auth0 login button
-│       ├── logoutButton.jsx  # Auth0 logout button
+│       ├── NavBar.jsx        # Navigation bar
+│       ├── HomePage.jsx      # Landing page
+│       ├── signUp.jsx        # Supabase signup (email/password + username)
+│       ├── loginPage.jsx     # Username + password login
 │       └── Profile.jsx       # User profile component
 ├── public/                  # Static files
 ├── index.html               # HTML entry point
@@ -104,18 +106,23 @@ This project uses functional components with React Hooks:
 
 - **State Management**: Local component state with `useState()`
 - **Side Effects**: `useEffect()` for data fetching and side effects
+- **Auth Context**: `AuthContext` provides Supabase session, profile (username), and auth helpers
 - **Props-based Communication**: Simple unidirectional data flow
-- **No Global State Library**: Uses props drilling for simplicity (can be refactored with Context API if needed)
 
 ## 🔐 Authentication
 
-The app uses Auth0 for secure user authentication. Features include:
+The app uses Supabase Auth:
 
-- Login via `loginButton` component
-- Logout via `logoutButton` component
-- User profile access via `Profile` component
+- Signup with email, password, and a username (stored in a `profiles` table)
+- Login with username + password (resolved to email behind the scenes)
+- Profile view shows username/email and allows sign out
 
-Configure your Auth0 credentials in the environment variables before running the app.
+Environment variables (set in `.env.local`):
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_supabase_anon_key
+```
 
 ## 📝 Development Guidelines
 
@@ -144,8 +151,8 @@ The project uses Vite for environment variable management. Access environment va
 Create a `.env.local` file in the project root for local development:
 
 ```env
-VITE_AUTH0_DOMAIN=your_auth0_domain
-VITE_AUTH0_CLIENT_ID=your_auth0_client_id
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_supabase_anon_key
 ```
 
 ## 📄 License

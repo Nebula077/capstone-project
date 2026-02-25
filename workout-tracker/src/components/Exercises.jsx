@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import axios from 'axios';
 import Footer from './Footer.jsx';
+import { useLocation } from 'react-router-dom';
+import { saveUserExercise } from '../utils/saveUserExercise';
 
 function Exercises() {
 
@@ -13,6 +15,11 @@ function Exercises() {
     const BASE_URL = import.meta.env.VITE_WGER_API_BASE_URL || 'https://wger.de/api/v2/';
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]);
+    const [page, setPage] = useState(1);
+    const [hasNext, setHasNext] = useState(false);
+    const [hasPrev, setHasPrev] = useState(false);
+    const PAGE_SIZE = 25;
+
     const getVideos = async (exerciseId) => {
         try {
             const response = await axios.get(`${BASE_URL}exerciseinfo/${exerciseId}/`, {
@@ -26,27 +33,61 @@ function Exercises() {
             return [];
         }
     };
- 
+
+    const [selectedExercises, setSelectedExercises] = useState([]);
+    const handleExerciseSelect = (exercise) => {
+        if (selectedExercises.includes(exercise)) {
+            setSelectedExercises(selectedExercises.filter((e) => e !== exercise));
+        } else {
+            setSelectedExercises([...selectedExercises, exercise]);
+        }
+    };
+
+    const handleAddExercise = async (exercise) => {
+        const result = await saveUserExercise(user, exercise);
+
+        if (!result.ok) {
+            if (result.error === 'NOT_AUTHENTICATED') {
+                alert('Please log in to save exercises.');
+            } else if (result.error === 'ALREADY_EXISTS') {
+                alert('This exercise is already saved.');
+            } else {
+                console.error('Error saving exercise:', result.error);
+                alert('Could not save exercise. Please try again.');
+            }
+            return;
+        }
+
+        alert('Exercise saved!');
+    };
 
     useEffect(() => {
         const fetchExercises = async () => {
             try {
-                const response = await axios.get(`${BASE_URL}exerciseinfo/`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
+                setLoading(true);
+                const offset = (page - 1) * PAGE_SIZE;
+
+                const response = await axios.get(
+                    `${BASE_URL}exerciseinfo/?limit=${PAGE_SIZE}&offset=${offset}`,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+
                 setExercises(response.data.results);
-                setLoading(false);
-                // console.log(response.data.results);
-                
+                setHasNext(!!response.data.next);
+                setHasPrev(!!response.data.previous);
             } catch (error) {
-                console.error('Error fetching exercises:', error);
+                console.error("Error fetching exercises:", error);
+            } finally {
                 setLoading(false);
             }
         };
+
         fetchExercises();
-    }, []);
+    }, [BASE_URL, page]);
 
     const getCategories = async () => {
         try {
@@ -63,6 +104,21 @@ function Exercises() {
     };
     
 
+    const location = useLocation();
+    const [searchQuery, setSearchQuery] = useState("");
+    const [source, setSource] = useState("wger");
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const q = params.get('query') || '';
+        const src = params.get('source') || 'wger';
+
+        setSearchQuery(q);
+        setSource(src === 'saved' ? 'saved' : 'wger');
+    }, [location.search]);
+
+    const [term, setTerm] = useState('');        // ✅ not useState()
+
     if (loading) {
         return <p>Loading...</p>;
     }
@@ -72,25 +128,36 @@ function Exercises() {
       <NavBar />
         <h1 className='text-2xl font-bold mb-4'>Exercise Library</h1>
         <p className='text-gray-700'>Browse through a wide range of exercises and find the perfect workout for your goals.</p>
-        <div className='mt-6 p-4 bg-white rounded-lg shadow-md'>
+        <div className='mt-6 p-4 bg-white rounded-2xl shadow-md'>
             <h2 className='text-xl font-semibold mb-2'>All Exercises</h2>
             {exercises.map((exercise) => {
                 const englishName = exercise.translations.find((t) => t.language === 2)?.name || exercise.name;
                 return (
-                <div key={exercise.id} className='p-4 bg-gray-100 rounded-lg shadow-sm mb-4'>
-                    <h3 className='text-lg font-semibold'>{englishName?englishName : exercise.name}</h3>
-                    <h5>Muscles: {exercise.muscles?.length > 0 ? exercise.muscles.map((muscle) => muscle.name_en).join(', ') : 'N/A'} </h5>
-                    <h5>Category: {exercise.category?.name || 'N/A'}</h5>
-                    <h5>Equipment: {exercise.equipment?.name || 'N/A'}</h5>
-                    {exercise.images?.length > 0 && (
-                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 object-cover lg:grid-cols-4 lg:gap-6 sm:gap-4 xs:grid-cols-1">
-                            {exercise.images.map((image) => (
-                                <img key={image.id} src={image.image} alt={englishName} className="w-full h-48 object-cover rounded-md mb-2" />
-                            ))}
+                <div key={exercise.id} className='flex'>
+                    <div className='p-4 bg-gray-100 rounded-lg shadow-sm mb-4 w-100 flex-4'>
+                        <h3 className='text-lg font-semibold'>{englishName?englishName : exercise.name}</h3>
+                        <h5>Muscles: {exercise.muscles?.length > 0 ? exercise.muscles.map((muscle) => muscle.name_en).join(', ') : 'N/A'} </h5>
+                        <h5>Category: {exercise.category?.name || 'N/A'}</h5>
+                        <h5>Equipment: {exercise.equipment?.name || 'N/A'}</h5>
+                        {exercise.images?.length > 0 && (
+                            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 object-cover lg:grid-cols-4 lg:gap-6 sm:gap-4 xs:grid-cols-1">
+                                {exercise.images.map((image) => (
+                                    <img key={image.id} src={image.image} alt={englishName} className="w-full h-48 object-cover rounded-md mb-2" />
+                                ))}
+                            </div>
+                        )}
+                        <p className='text-gray-700'>Description: {exercise.description}</p>
+                        <p>Videos: {exercise.videos?.length || 0}</p>
+                    </div>
+                    <div className='ml-4 w-20 flex-1 mt-3'>
+                        <div className='mt-2'>
+                            <input type="checkbox" className='mx-auto ' id={`selectExercise-${exercise.id}`} onChange={() => handleExerciseSelect(exercise)} />
                         </div>
-                    )}
-                    <p className='text-gray-700'>Description: {exercise.description}</p>
-                    <p>Videos: {exercise.videos?.length || 0}</p>
+                        <div>
+                            <button id='selectExeBtn' onClick={() => handleAddExercise(exercise)} className='mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600'>Add</button>
+                        </div>
+                        
+                    </div>
                 </div>
                 );
             })}
@@ -102,6 +169,23 @@ function Exercises() {
         </div>
         <div>
             <button onClick={getCategories} className='mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600'>Get Categories</button>
+        </div>
+        <div className="flex items-center justify-between mb-4">
+            <button
+                className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={!hasPrev || loading}
+            >
+                Previous
+            </button>
+            <span>Page {page}</span>
+            <button
+                className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasNext || loading}
+            >
+                Next
+            </button>
         </div>
         <Footer />
     </div>
