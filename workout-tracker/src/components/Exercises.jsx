@@ -7,6 +7,7 @@ import axios from 'axios';
 import Footer from './Footer.jsx';
 import { useLocation } from 'react-router-dom';
 import { saveUserExercise } from '../utils/saveUserExercise';
+import LoadingSkeleton from '../context/LoadingSkeleton.jsx';
 
 function Exercises() {
 
@@ -117,10 +118,14 @@ function Exercises() {
         setSource(src === 'saved' ? 'saved' : 'wger');
     }, [location.search]);
 
-    const [term, setTerm] = useState('');        // ✅ not useState()
+    const [term, setTerm] = useState('');        
 
     if (loading) {
-        return <p>Loading...</p>;
+        return (
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3 p-6'>
+                {Array.from({ length: 10 }).map((_, index) => <LoadingSkeleton key={index} />)}
+            </div>
+    );
     }
 
   return (
@@ -134,16 +139,17 @@ function Exercises() {
                 const englishName = exercise.translations.find((t) => t.language === 2)?.name || exercise.name;
                 return (
                 <div key={exercise.id} className='flex'>
-                    <div className='p-4 bg-gray-100 rounded-lg shadow-sm mb-4 w-100 flex-4'>
+                    <div className='p-4 bg-slate-100 rounded-lg shadow-sm mb-4 w-100 flex-4 border-l-4 border-blue-500'>
                         <h3 className='text-lg font-semibold'>{englishName?englishName : exercise.name}</h3>
                         <h5>Muscles: {exercise.muscles?.length > 0 ? exercise.muscles.map((muscle) => muscle.name_en).join(', ') : 'N/A'} </h5>
                         <h5>Category: {exercise.category?.name || 'N/A'}</h5>
                         <h5>Equipment: {exercise.equipment?.name || 'N/A'}</h5>
                         {exercise.images?.length > 0 && (
                             <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 object-cover lg:grid-cols-4 lg:gap-6 sm:gap-4 xs:grid-cols-1">
-                                {exercise.images.map((image) => (
-                                    <img key={image.id} src={image.image} alt={englishName} className="w-full h-48 object-cover rounded-md mb-2" />
-                                ))}
+                                {exercise.images.map((image) => {
+                                    const imageUrl = image.image.replace('http://', 'https://');
+                                    return <img key={image.id} src={imageUrl} alt={englishName} className="w-full h-48 object-cover rounded-md mb-2" />;
+                                })}
                             </div>
                         )}
                         <p className='text-gray-700'>Description: {exercise.description}</p>

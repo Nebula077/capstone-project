@@ -1,16 +1,74 @@
-# React + Vite
+# Workout Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive web application for tracking and managing your fitness workouts. Built with React, Vite, Tailwind CSS, and Supabase authentication.
 
-Currently, two official plugins are available:
+## 🎯 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **User Authentication**: Email/password signup and username-based login powered by Supabase
+- **Exercise Library**: Browse exercises from the WGER public API with images, muscles, categories, and pagination
+- **Search & Results**: Global search and results tabs for WGER, My Saved, and Info
+- **Home Dashboard**: Scheduled workouts, saved exercises, and previous workouts dropdown
+- **Workout Session**: Log duration, reps, and priority; mark scheduled exercises completed
+- **Profile & Activity**: Completed activities dropdown, recent activity dropdown, and preferred categories
+- **Responsive Design**: Optimized for desktop, tablet, and mobile
+- **Fast Performance**: Vite-powered builds and HMR
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend Framework**: React 19.2.0 with Hooks
+- **Build Tool**: Vite 7.2.4
+- **Styling**: Tailwind CSS
+- **Authentication**: Supabase Auth
+- **Code Quality**: ESLint 9.39.1
 
-## Expanding the ESLint configuration
+## 🚀 Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
+
+```bash
+git clone <repository-url>
+cd capstone-project/workout-tracker
+npm install
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+### Preview
+
+```bash
+npm run preview
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## 🔐 Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_supabase_anon_key
+```
+
+## 📄 License
+
+This project is part of a capstone initiative.

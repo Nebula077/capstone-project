@@ -9,17 +9,21 @@ A modern, responsive web application for tracking and managing your fitness work
 - **Search & Results**:
 	- Global search from the navbar
 	- Results page with three tabs: **WGER**, **My Saved**, and **Info** (Wikipedia summary like "push up exercise")
-- **Workout Management**:
-	- Save WGER exercises (including images and muscles) to a `user_exercises` table
-	- Scheduled/Upcoming workouts shown on the Home page with basic details and thumbnails
-	- Mark workouts as completed (tracked with `completed` and `completed_at`)
-- **Profile & Editing**:
-	- Profile page showing username, email, and saved exercises
-	- Edit Profile form to update username, full name, and bio
-	- Completed activities carousel showing previously completed workouts
-- **Responsive Design**: Fully responsive UI that works on desktop, tablet, and mobile devices
+- **Home Dashboard**:
+	- Scheduled workouts with details and images
+	- Saved exercises with completion tracking
+	- Previous workouts dropdown with "Show More" and per-item details
+- **Workout Session**:
+	- Log duration, sets/reps, and priority
+	- Mark scheduled exercises as completed
+- **Profile & Activity**:
+	- Profile details with edit flow
+	- Completed activities dropdown with totals and details
+	- Recent activity dropdown (first two items + "Show More")
+	- Preferred categories aggregated from saved and completed exercises
+- **Responsive Design**: Fully responsive UI for desktop, tablet, and mobile
 - **Fast Performance**: Built with Vite for lightning-fast development and production builds
-- **Modern Styling**: Tailwind CSS and CoreUI for clean, utility-first styling
+- **Modern Styling**: Tailwind CSS with utility-first styling
 
 ## 🛠️ Tech Stack
 
@@ -35,30 +39,34 @@ A modern, responsive web application for tracking and managing your fitness work
 ```
 workout-tracker/
 ├── src/
-│   ├── App.jsx              # Root component
-│   ├── main.jsx             # Entry point
-│   ├── App.css              # App styles
-│   ├── index.css            # Global styles
-│   ├── assets/              # Static assets
+│   ├── App.jsx               # Root component
+│   ├── main.jsx              # Entry point
+│   ├── App.css               # App styles
+│   ├── index.css             # Global styles
+│   ├── assets/               # Static assets
 │   └── components/
-│       ├── NavBar.jsx        # Navigation bar with global search and profile link
-│       ├── HomePage.jsx      # Landing page, upcoming workouts, saved and previous workouts
-│       ├── Exercises.jsx     # WGER exercise library with pagination and save-to-Supabase
-│       ├── Results.jsx       # Search results (WGER, My Saved, Info/Wikipedia)
-│       ├── signUp.jsx        # Supabase signup (email/password + username, full name, bio)
-│       ├── loginPage.jsx     # Username + password login (username resolved to email)
-│       ├── Profile.jsx       # User profile, completed activities carousel, saved exercises
-│       └── EditProfile.jsx   # Edit profile form (username, full name, bio)
+│       ├── NavBar.jsx         # Navigation bar with global search and profile link
+│       ├── HomePage.jsx       # Dashboard with scheduled/saved/previous workouts
+│       ├── Workout.jsx        # Workout session tracking
+│       ├── Exercises.jsx      # WGER exercise library with pagination and save-to-Supabase
+│       ├── Results.jsx        # Search results (WGER, My Saved, Info/Wikipedia)
+│       ├── AddExercise.jsx    # Add custom exercises
+│       ├── profile.jsx        # Profile, activity dropdowns, preferred categories
+│       ├── EditProfile.jsx    # Edit profile form (username, full name, bio)
+│       ├── signUp.jsx         # Supabase signup (email/password + username, full name, bio)
+│       ├── loginPage.jsx      # Username + password login (username resolved to email)
+│       ├── logoutButton.jsx   # Logout button component
+│       └── Footer.jsx         # Footer
 │
 │   └── utils/
-│       └── saveUserExercise.js # Shared helper to persist WGER exercises into user_exercises
-├── public/                  # Static files
-├── index.html               # HTML entry point
-├── package.json             # Dependencies & scripts
-├── tailwind.config.js       # Tailwind CSS configuration
-├── vite.config.js           # Vite configuration
-├── eslint.config.js         # ESLint rules
-└── README.md                # This file
+│       └── saveUserExercise.js # Persist WGER exercises into user_exercises
+├── public/                    # Static files
+├── index.html                 # HTML entry point
+├── package.json               # Dependencies & scripts
+├── tailwind.config.js         # Tailwind CSS configuration
+├── vite.config.js             # Vite configuration
+├── eslint.config.js           # ESLint rules
+└── README.md                  # This file
 ```
 
 ## 🚀 Getting Started
@@ -136,9 +144,9 @@ The app uses Supabase for both authentication and data storage:
 	- Profile view shows username/email and allows sign out
 
 - **Database Tables (core)**:
-	- `profiles`: `id`, `email`, `username`, `full_name`, `bio`
-	- `user_exercises`: `user_id`, `exercise_id`, `name`, `category`, `description`, `images` (JSON array of URLs), `muscles` (JSON array), `completed`, `completed_at`
-	- `exercises`: custom exercises created by the user (used on Home/Profile)
+	- `profiles`: `id`, `email`, `username`, `full_name`, `bio`, `created_at`, `updated_at`
+	- `exercises`: `id`, `user_id`, `name`, `description`, `category`, `images`, `completed`, `completed_at`, `created_at`, `updated_at`
+	- `user_exercises`: `id`, `user_id`, `name`, `category`, `duration`, `muscles`, `images`, `completed`, `completed_at`, `created_at`, `updated_at`
 
 Environment variables (set in `.env.local`):
 

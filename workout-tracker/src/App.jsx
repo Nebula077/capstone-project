@@ -9,6 +9,7 @@ import AddExercise from './components/AddExercise.jsx';
 import Exercises from './components/Exercises.jsx';
 import Results from './components/Results.jsx';
 import EditProfile from "./components/EditProfile.jsx";
+import Workout from './components/Workout.jsx';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -43,6 +44,7 @@ function App() {
         <Route path="/exercises" element={<Exercises />} />
         <Route path="/results" element={<Results />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/workout" element={<Workout />} />
       </Routes>
     </Router>
   );

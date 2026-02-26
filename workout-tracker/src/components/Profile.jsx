@@ -11,6 +11,11 @@ function Profile() {
     const [createdExercises, setCreatedExercises] = useState([]);
     const [completedExercises, setCompletedExercises] = useState([]);
     const [currentCompletedIndex, setCurrentCompletedIndex] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [userActivity, setUserActivity] = useState([]);
+    const [expandedExercises, setExpandedExercises] = useState(new Set());
+    const [expandedActivities, setExpandedActivities] = useState(new Set());
+    const [showAllActivities, setShowAllActivities] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -39,6 +44,7 @@ function Profile() {
         if (!user) {
             setCompletedExercises([]);
             setCurrentCompletedIndex(0);
+            setUserActivity([]);
             return;
         }
 
@@ -57,6 +63,7 @@ function Profile() {
 
             setCompletedExercises(data || []);
             setCurrentCompletedIndex(0);
+            setUserActivity(data || []);
         };
 
         fetchCompleted();
@@ -77,6 +84,55 @@ function Profile() {
         completedExercises.length > 0
             ? completedExercises[currentCompletedIndex]
             : null;
+
+    const calculateTotalDuration = () => {
+        return completedExercises.reduce((total, exercise) => {
+            const duration = parseInt(exercise.duration) || 0;
+            return total + duration;
+        }, 0);
+    };
+
+    const toggleActivityExpand = (activityId) => {
+        setExpandedActivities(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(activityId)) {
+                newSet.delete(activityId);
+            } else {
+                newSet.add(activityId);
+            }
+            return newSet;
+        });
+    };
+
+    const toggleExerciseExpand = (exerciseId) => {
+        setExpandedExercises(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(exerciseId)) {
+                newSet.delete(exerciseId);
+            } else {
+                newSet.add(exerciseId);
+            }
+            return newSet;
+        });
+    };
+
+    const getPreferredCategories = () => {
+        const allCategories = new Set();
+        
+        createdExercises.forEach(ex => {
+            if (ex.category) {
+                allCategories.add(ex.category);
+            }
+        });
+        
+        completedExercises.forEach(ex => {
+            if (ex.category) {
+                allCategories.add(ex.category);
+            }
+        });
+        
+        return Array.from(allCategories);
+    };
 
     return (
         <div className=" mx-auto p-4  bg-gray-200 rounded-lg shadow-md">
@@ -104,53 +160,120 @@ function Profile() {
                             <Link to="/edit-profile">Edit Profile</Link>
                         </button>
                     </div>
+                    
                     <div className='mt-6 rounded-2xl shadow p-8 bg-indigo-300 text-white'>
-                        <h3 className='text-lg font-semibold mb-4 text-center'>Completed activities</h3>
-                        {completedExercises.length === 0 || !currentCompleted ? (
+                        <h3 className='text-lg font-semibold mb-4 text-center'>Completed Activities</h3>
+                        {completedExercises.length === 0 ? (
                             <p className='text-center text-sm'>You have no completed activities yet.</p>
                         ) : (
-                            <div className='flex flex-col items-center'>
-                                <div className='w-full max-w-md bg-indigo-400 rounded-xl p-4 shadow-md text-left'>
-                                    <h4 className='text-md font-semibold mb-1'>{currentCompleted.name}</h4>
-                                    {currentCompleted.category && (
-                                        <p className='text-sm'>Category: {currentCompleted.category}</p>
-                                    )}
-                                    {currentCompleted.muscles && (
-                                        <p className='text-sm'>Muscles: {Array.isArray(currentCompleted.muscles) ? currentCompleted.muscles.join(', ') : currentCompleted.muscles}</p>
-                                    )}
-                                    {currentCompleted.completed_at && (
-                                        <p className='text-xs mt-2'>Completed on: {new Date(currentCompleted.completed_at).toLocaleString()}</p>
-                                    )}
+                            <div className='space-y-4'>
+                                {/* Summary Stats */}
+                                <div className='grid grid-cols-2 gap-4 mb-6'>
+                                    <div className='bg-indigo-400 rounded-lg p-4 text-center'>
+                                        <p className='text-sm opacity-90'>Total Duration</p>
+                                        <p className='text-2xl font-bold'>{calculateTotalDuration()} min</p>
+                                    </div>
+                                    <div className='bg-indigo-400 rounded-lg p-4 text-center'>
+                                        <p className='text-sm opacity-90'>Completed</p>
+                                        <p className='text-2xl font-bold'>{completedExercises.length}</p>
+                                    </div>
                                 </div>
-                                <div className='flex justify-between items-center w-full max-w-md mt-4'>
-                                    <button
-                                        type='button'
-                                        className='px-3 py-1 bg-indigo-500 rounded disabled:opacity-50'
-                                        onClick={() =>
-                                            setCurrentCompletedIndex((prev) =>
-                                                prev === 0 ? completedExercises.length - 1 : prev - 1
-                                            )
-                                        }
-                                        disabled={completedExercises.length <= 1}
-                                    >
-                                        Previous
-                                    </button>
-                                    <span className='text-xs'>
-                                        {currentCompletedIndex + 1} of {completedExercises.length}
-                                    </span>
-                                    <button
-                                        type='button'
-                                        className='px-3 py-1 bg-indigo-500 rounded disabled:opacity-50'
-                                        onClick={() =>
-                                            setCurrentCompletedIndex((prev) =>
-                                                prev === completedExercises.length - 1 ? 0 : prev + 1
-                                            )
-                                        }
-                                        disabled={completedExercises.length <= 1}
-                                    >
-                                        Next
-                                    </button>
+
+                                <div className='space-y-2'>
+                                    {completedExercises.map((exercise) => (
+                                        <div key={exercise.id} className='bg-indigo-400 rounded-lg overflow-hidden'>
+                                            <button
+                                                onClick={() => toggleExerciseExpand(exercise.id)}
+                                                className='w-full px-4 py-3 flex justify-between items-center hover:bg-indigo-500 transition-colors'
+                                            >
+                                                <span className='font-semibold text-left'>{exercise.name}</span>
+                                                <span className='text-sm'>
+                                                    {expandedExercises.has(exercise.id) ? '▼' : '▶'}
+                                                </span>
+                                            </button>
+                                            {expandedExercises.has(exercise.id) && (
+                                                <div className='px-4 py-3 bg-indigo-500 border-t border-indigo-300 space-y-2 text-sm'>
+                                                    {exercise.category && (
+                                                        <p><span className='font-semibold'>Category:</span> {exercise.category}</p>
+                                                    )}
+                                                    {exercise.duration && (
+                                                        <p><span className='font-semibold'>Duration:</span> {exercise.duration} minutes</p>
+                                                    )}
+                                                    {exercise.completed_at && (
+                                                        <p><span className='font-semibold'>Completed:</span> {new Date(exercise.completed_at).toLocaleDateString()}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className='grid border border-l-2 p-4 shadow-md rounded-2xl mt-6 bg-white'>
+                        <h2 className='text-xl font-semibold mb-4'>Preferred Categories</h2>
+                        <div className='flex flex-wrap gap-4 justify-center'>
+                            {getPreferredCategories().length > 0 ? getPreferredCategories().map((category, idx) => (
+                                <div key={idx} className='p-2 bg-gray-100 rounded-lg shadow-sm shrink-0 border-l-4  border-blue-500 gap-0.5 items-center justify-center flex'>
+                                    <p className='text-gray-700 text-lg font-medium items-center'>{category}</p>
+                                </div>
+                            )
+                            ) : (
+                                <p className='text-gray-500 text-sm'>No categories yet.</p>
+                            )}
+                        </div>
+                    </div>
+                    <div className='mt-6 rounded-2xl shadow p-8 bg-green-300 text-white'>
+                        <h3 className='text-lg font-semibold mb-4 text-center'>Your Recent Activity</h3>
+                        {userActivity.length === 0 ? (
+                            <p className='text-center text-sm'>No recent activity. Start working out to see your progress here!</p>
+                        ) : (
+                            <div className='space-y-4'>
+                                {/* Summary Stats */}
+                                <div className='bg-green-400 rounded-lg p-4 text-center'>
+                                    <p className='text-sm opacity-90'>Total Activities</p>
+                                    <p className='text-2xl font-bold'>{userActivity.length}</p>
+                                </div>
+
+                                {/* Dropdown List */}
+                                <div className='space-y-2'>
+                                    {userActivity.slice(0, showAllActivities ? userActivity.length : 2).map((activity) => (
+                                        <div key={activity.id} className='bg-green-400 rounded-lg overflow-hidden'>
+                                            <button
+                                                onClick={() => toggleActivityExpand(activity.id)}
+                                                className='w-full px-4 py-3 flex justify-between items-center hover:bg-green-500 transition-colors'
+                                            >
+                                                <span className='font-semibold text-left'>{activity.name}</span>
+                                                <span className='text-sm'>
+                                                    {expandedActivities.has(activity.id) ? '▼' : '▶'}
+                                                </span>
+                                            </button>
+                                            {expandedActivities.has(activity.id) && (
+                                                <div className='px-4 py-3 bg-green-500 border-t border-green-300 space-y-2 text-sm'>
+                                                    {activity.category && (
+                                                        <p><span className='font-semibold'>Category:</span> {activity.category}</p>
+                                                    )}
+                                                    {activity.duration && (
+                                                        <p><span className='font-semibold'>Duration:</span> {activity.duration} minutes</p>
+                                                    )}
+                                                    {activity.completed_at && (
+                                                        <p><span className='font-semibold'>Completed:</span> {new Date(activity.completed_at).toLocaleString()}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Show More/Less Button */}
+                                {userActivity.length > 2 && (
+                                    <button
+                                        onClick={() => setShowAllActivities(!showAllActivities)}
+                                        className='w-full px-4 py-2 bg-green-400 hover:bg-green-500 rounded-lg font-semibold transition-colors'
+                                    >
+                                        {showAllActivities ? 'Show Less' : `Show More (${userActivity.length - 2} more)`}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
