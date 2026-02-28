@@ -1,7 +1,7 @@
 import './App.css';
 import HomePage from './components/HomePage.jsx';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Profile from './components/profile.jsx';
+import Profile from './components/Profile.jsx';
 import SignUp from './components/signUp.jsx';
 import LoginPage from './components/loginPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
