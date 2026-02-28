@@ -74,7 +74,7 @@ A modern, responsive web application for tracking and managing your fitness work
 ### State Management
 
 - **Zustand 5.0.11** - Lightweight state management
-- **TanStack Query** - Server state management
+- **TanStack Query** - Server state management and caching
 
 ### Code Quality
 
