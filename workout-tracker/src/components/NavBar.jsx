@@ -79,7 +79,7 @@ function NavBar() {
                   <CDropdownItem onClick={() => navigate('/workout')}>
                     My Workouts
                   </CDropdownItem>
-                  <CDropdownItem hidden onClick={() => navigate(user ? '/profile' : '/signup')}>
+                  <CDropdownItem hidden onClick={() => navigate(user ? '/profile' : '/login')}>
                     {user ? "Profile" : "Login"}
                   </CDropdownItem>
                 </CDropdownMenu>
@@ -100,7 +100,7 @@ function NavBar() {
             <div className="d-flex gap-3 align-items-center">
               <CButton
                 style={{ fontSize: '1.5rem' }}
-                onClick={() => navigate(user ? "/profile" : "/login")}
+                onClick={() => navigate(user ? "/profile" : "/signup")}
               >
                 <CiUser className="text-dark" />
               </CButton>
