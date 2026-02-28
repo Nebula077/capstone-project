@@ -15,7 +15,6 @@ export default function SignUp() {
     const [fullName, setFullName] = useState("");
     const navigate = useNavigate();
 
-    // If already authenticated, send to profile
     useEffect(() => {
         if (!authLoading && user) {
             navigate("/profile", { replace: true });
@@ -32,7 +31,6 @@ export default function SignUp() {
         try {
             await signUpWithEmailPassword({ email, password, username, bio, fullName });
             setStatus("sent");
-            // After successful sign-up, redirect to login
             navigate("/login", { replace: true });
         } catch (error) {
             setStatus("error");

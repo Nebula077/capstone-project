@@ -1,9 +1,6 @@
-import React from 'react'
 import NavBar from './NavBar';
 import { useAuth } from '../context/AuthContext.jsx';
 import Footer from './Footer.jsx';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Formik } from 'formik';
 import supabase from '../../supabase-client';
 import { useNavigate } from 'react-router-dom';
@@ -12,22 +9,9 @@ function AddExercise() {
 
 const { user } = useAuth();
 const BASE_URL = import.meta.env.VITE_WGER_API_BASE_URL || 'https://wger.de/api/v2/';
-const [categories, setCategories] = useState([]);
 const navigate = useNavigate();
 
-const getCategories = async () => {
-    try {
-        const response = await axios.get(`${BASE_URL}exercisecategory/`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        setCategories(response.data.results);
-        console.log(response.data.results);
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-    }
-};
+
 
   return (
     <div>

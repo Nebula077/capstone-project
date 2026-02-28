@@ -1,4 +1,3 @@
-import React from 'react';
 import NavBar from "./NavBar";
 import { useAuth } from "../context/AuthContext.jsx";
 import supabase from '../../supabase-client';
@@ -11,7 +10,6 @@ function Profile() {
     const [createdExercises, setCreatedExercises] = useState([]);
     const [completedExercises, setCompletedExercises] = useState([]);
     const [currentCompletedIndex, setCurrentCompletedIndex] = useState(0);
-    const [loading, setLoading] = useState(true);
     const [userActivity, setUserActivity] = useState([]);
     const [expandedExercises, setExpandedExercises] = useState(new Set());
     const [expandedActivities, setExpandedActivities] = useState(new Set());
@@ -135,7 +133,7 @@ function Profile() {
     };
 
     return (
-        <div className=" mx-auto p-4  bg-gray-200 rounded-lg shadow-md">
+        <div className=" mx-auto p-4 font-serif bg-gray-200 rounded-lg shadow-md">
             <NavBar />
             <article className="profile-card p-4 bg-white rounded-lg shadow-sm mb-4">
                 <h2 className="text-xl font-semibold mb-2">Hello: {displayName}</h2>
@@ -145,8 +143,8 @@ function Profile() {
                 
             </article>
             <div>
-                <main className='flex-1 p-10'>
-                    <div className='bg-white rounded-2xl shadow p-8 text-center'>
+                <main className='flex-1'>
+                    <div className='bg-white rounded-2xl shadow p-4 text-center mt-4'>
                         <h1 className='text-2xl font-bold mb-4'>Welcome to Your Profile</h1>
                         <div className='relative w-24 h-24 mx-auto'>
                             <img src="null" alt="Profile Picture" className="w-24 h-24 rounded-full mx-auto" />
@@ -161,13 +159,12 @@ function Profile() {
                         </button>
                     </div>
                     
-                    <div className='mt-6 rounded-2xl shadow p-8 bg-indigo-300 text-white'>
+                    <div className='mt-6 rounded-2xl shadow p-4 bg-indigo-300 text-white'>
                         <h3 className='text-lg font-semibold mb-4 text-center'>Completed Activities</h3>
                         {completedExercises.length === 0 ? (
                             <p className='text-center text-sm'>You have no completed activities yet.</p>
                         ) : (
                             <div className='space-y-4'>
-                                {/* Summary Stats */}
                                 <div className='grid grid-cols-2 gap-4 mb-6'>
                                     <div className='bg-indigo-400 rounded-lg p-4 text-center'>
                                         <p className='text-sm opacity-90'>Total Duration</p>
@@ -212,7 +209,7 @@ function Profile() {
                     </div>
                     <div className='grid border border-l-2 p-4 shadow-md rounded-2xl mt-6 bg-white'>
                         <h2 className='text-xl font-semibold mb-4'>Preferred Categories</h2>
-                        <div className='flex flex-wrap gap-4 justify-center'>
+                        <div className='flex flex-wrap gap-4 justify-center animate-bounce accent-red-200'>
                             {getPreferredCategories().length > 0 ? getPreferredCategories().map((category, idx) => (
                                 <div key={idx} className='p-2 bg-gray-100 rounded-lg shadow-sm shrink-0 border-l-4  border-blue-500 gap-0.5 items-center justify-center flex'>
                                     <p className='text-gray-700 text-lg font-medium items-center'>{category}</p>
@@ -223,7 +220,7 @@ function Profile() {
                             )}
                         </div>
                     </div>
-                    <div className='mt-6 rounded-2xl shadow p-8 bg-green-300 text-white'>
+                    <div className='mt-6 rounded-2xl shadow p-4 bg-green-300 text-white'>
                         <h3 className='text-lg font-semibold mb-4 text-center'>Your Recent Activity</h3>
                         {userActivity.length === 0 ? (
                             <p className='text-center text-sm'>No recent activity. Start working out to see your progress here!</p>
@@ -280,7 +277,7 @@ function Profile() {
                 </main>
             </div>
 
-            <section className="p-4 bg-white rounded-lg shadow-sm">
+            <section className="p-4 bg-white mt-4 mb-2 rounded-lg shadow-sm">
                 <h3 className="text-lg font-semibold mb-2">Your Saved Exercises</h3>
                 {createdExercises.length > 0 ? (
                     createdExercises.map((ex) => (

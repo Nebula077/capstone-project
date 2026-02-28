@@ -6,13 +6,13 @@ import { useAuth } from "../context/AuthContext.jsx";
 import supabase from "../../supabase-client";
 
 export default function EditProfile() {
-  const { user, profile, setProfile } = useAuth();
+  const { user, setProfile } = useAuth();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | saving | success | error
+  const [status, setStatus] = useState("idle"); 
   const [error, setError] = useState(null);
 
   // Redirect if not logged in

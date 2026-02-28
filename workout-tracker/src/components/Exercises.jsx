@@ -1,50 +1,100 @@
-import React from 'react'
 import NavBar from './NavBar';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import Footer from './Footer.jsx';
 import { useLocation } from 'react-router-dom';
 import { saveUserExercise } from '../utils/saveUserExercise';
 import LoadingSkeleton from '../context/LoadingSkeleton.jsx';
+import { useQuery } from '@tanstack/react-query';
 
 function Exercises() {
 
-    const [exercises, setExercises] = useState([]);
     const { user } = useAuth();
     const BASE_URL = import.meta.env.VITE_WGER_API_BASE_URL || 'https://wger.de/api/v2/';
-    const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]);
     const [page, setPage] = useState(1);
-    const [hasNext, setHasNext] = useState(false);
-    const [hasPrev, setHasPrev] = useState(false);
     const PAGE_SIZE = 25;
-
-    const getVideos = async (exerciseId) => {
-        try {
-            const response = await axios.get(`${BASE_URL}exerciseinfo/${exerciseId}/`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            return response.data.results;
-        } catch (error) {
-            console.error('Error fetching videos:', error);
-            return [];
-        }
-    };
-
+    const location = useLocation();
     const [selectedExercises, setSelectedExercises] = useState([]);
-    const handleExerciseSelect = (exercise) => {
-        if (selectedExercises.includes(exercise)) {
-            setSelectedExercises(selectedExercises.filter((e) => e !== exercise));
-        } else {
-            setSelectedExercises([...selectedExercises, exercise]);
-        }
-    };
+    const [showCategories, setShowCategories] = useState(false);
 
-    const handleAddExercise = async (exercise) => {
+    // Derive search params from URL instead of storing in state
+    const urlParams = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+        return {
+            searchQuery: params.get('query') || '',
+            source: params.get('source') === 'saved' ? 'saved' : 'wger',
+        };
+    }, [location.search]);
+
+    // Fetch exercises with React Query
+    const fetchExercises = useCallback(async ({ queryKey }) => {
+        const [, currentPage] = queryKey;
+        const offset = (currentPage - 1) * PAGE_SIZE;
+        const response = await axios.get(
+            `${BASE_URL}exerciseinfo/?limit=${PAGE_SIZE}&offset=${offset}`,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        return response.data;
+    }, [BASE_URL, PAGE_SIZE]);
+
+    const { 
+        data: exerciseData, 
+        isLoading: exercisesLoading, 
+        error: exercisesError,
+        isPreviousData 
+    } = useQuery({
+        queryKey: ['exercises', page],
+        queryFn: fetchExercises,
+        keepPreviousData: true,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+
+    const exercises = exerciseData?.results || [];
+    const hasNext = !!exerciseData?.next;
+    const hasPrev = !!exerciseData?.previous;
+
+    // Fetch categories with React Query
+    const fetchCategories = useCallback(async () => {
+        const response = await axios.get(`${BASE_URL}exercisecategory/`, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data.results;
+    }, [BASE_URL]);
+
+    const { 
+        data: categories = [], 
+       
+        refetch: refetchCategories 
+    } = useQuery({
+        queryKey: ['exerciseCategories'],
+        queryFn: fetchCategories,
+        enabled: showCategories, // Only fetch when user wants to see categories
+        staleTime: 10 * 60 * 1000, // 10 minutes
+    });
+
+    const getCategories = useCallback(() => {
+        setShowCategories(true);
+        refetchCategories();
+    }, [refetchCategories]);
+
+    const handleExerciseSelect = useCallback((exercise) => {
+        setSelectedExercises((prev) => {
+            if (prev.includes(exercise)) {
+                return prev.filter((e) => e !== exercise);
+            } else {
+                return [...prev, exercise];
+            }
+        });
+    }, []);
+
+    const handleAddExercise = useCallback(async (exercise) => {
         const result = await saveUserExercise(user, exercise);
 
         if (!result.ok) {
@@ -60,76 +110,38 @@ function Exercises() {
         }
 
         alert('Exercise saved!');
-    };
+    }, [user]);
 
-    useEffect(() => {
-        const fetchExercises = async () => {
-            try {
-                setLoading(true);
-                const offset = (page - 1) * PAGE_SIZE;
-
-                const response = await axios.get(
-                    `${BASE_URL}exerciseinfo/?limit=${PAGE_SIZE}&offset=${offset}`,
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    }
-                );
-
-                setExercises(response.data.results);
-                setHasNext(!!response.data.next);
-                setHasPrev(!!response.data.previous);
-            } catch (error) {
-                console.error("Error fetching exercises:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchExercises();
-    }, [BASE_URL, page]);
-
-    const getCategories = async () => {
-        try {
-            const response = await axios.get(`${BASE_URL}exercisecategory/`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            setCategories(response.data.results);
-            console.log(response.data.results);
-        } catch (error) {
-            console.error('Error fetching categories:', error);
-        }
-    };
-    
-
-    const location = useLocation();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [source, setSource] = useState("wger");
-
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const q = params.get('query') || '';
-        const src = params.get('source') || 'wger';
-
-        setSearchQuery(q);
-        setSource(src === 'saved' ? 'saved' : 'wger');
-    }, [location.search]);
-
-    const [term, setTerm] = useState('');        
-
-    if (loading) {
+    // Loading state
+    if (exercisesLoading && !isPreviousData) {
         return (
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3 p-6'>
-                {Array.from({ length: 10 }).map((_, index) => <LoadingSkeleton key={index} />)}
+            <div>
+                <NavBar />
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3 p-6'>
+                    {Array.from({ length: 10 }).map((_, index) => <LoadingSkeleton key={index} />)}
+                </div>
             </div>
-    );
+        );
+    }
+
+    // Error state
+    if (exercisesError) {
+        return (
+            <div>
+                <NavBar />
+                <div className="p-4 mt-10">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <p className="font-bold">Error loading exercises</p>
+                        <p>{exercisesError.message}</p>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
     }
 
   return (
-    <div>
+    <div className='p-4 bg-gray-100 min-h-screen font-serif min-w-full'>
       <NavBar />
         <h1 className='text-2xl font-bold mb-4'>Exercise Library</h1>
         <p className='text-gray-700'>Browse through a wide range of exercises and find the perfect workout for your goals.</p>
@@ -138,7 +150,7 @@ function Exercises() {
             {exercises.map((exercise) => {
                 const englishName = exercise.translations.find((t) => t.language === 2)?.name || exercise.name;
                 return (
-                <div key={exercise.id} className='flex'>
+                <div key={exercise.id} className='lg:flex sm:block mx-auto lg:p-4 lg:bg-white lg:rounded-lg lg:shadow-md mb-4 lg:border-l-4 lg:border-blue-500'>
                     <div className='p-4 bg-slate-100 rounded-lg shadow-sm mb-4 w-100 flex-4 border-l-4 border-blue-500'>
                         <h3 className='text-lg font-semibold'>{englishName?englishName : exercise.name}</h3>
                         <h5>Muscles: {exercise.muscles?.length > 0 ? exercise.muscles.map((muscle) => muscle.name_en).join(', ') : 'N/A'} </h5>
@@ -178,17 +190,20 @@ function Exercises() {
         </div>
         <div className="flex items-center justify-between mb-4">
             <button
-                className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={!hasPrev || loading}
+                disabled={!hasPrev || exercisesLoading}
             >
                 Previous
             </button>
-            <span>Page {page}</span>
+            <span className="flex items-center gap-2">
+                Page {page}
+                {isPreviousData && <span className="text-sm text-gray-500">(loading...)</span>}
+            </span>
             <button
-                className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={!hasNext || loading}
+                disabled={!hasNext || exercisesLoading}
             >
                 Next
             </button>
@@ -198,4 +213,4 @@ function Exercises() {
   )
 }
 
-export default Exercises
+export default Exercises;

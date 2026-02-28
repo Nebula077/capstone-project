@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import NavBar from './NavBar';
@@ -12,12 +12,14 @@ function Results() {
   const BASE_URL = import.meta.env.VITE_WGER_API_BASE_URL || 'https://wger.de/api/v2/';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [source, setSource] = useState('wger'); // 'wger' | 'saved' | 'info'
+  const [source, setSource] = useState('wger'); 
   const [loading, setLoading] = useState(false);
   const [wgerResults, setWgerResults] = useState([]);
   const [userResults, setUserResults] = useState([]);
   const [infoResult, setInfoResult] = useState(null);
   const [infoError, setInfoError] = useState(null);
+  const [wgerError, setWgerError] = useState(null);
+  const [userError, setUserError] = useState(null);
 
   // Read query + source from URL
   useEffect(() => {
@@ -29,16 +31,17 @@ function Results() {
     setSource(src === 'saved' || src === 'info' ? src : 'wger');
   }, [location.search]);
 
-  // Fetch WGER exercises and filter by searchQuery
   useEffect(() => {
     if (!searchQuery) {
       setWgerResults([]);
+      setWgerError(null);
       return;
     }
 
     const fetchWger = async () => {
       try {
         setLoading(true);
+        setWgerError(null);
         const response = await axios.get(`${BASE_URL}exerciseinfo/?limit=100`, {
           headers: { 'Content-Type': 'application/json' },
         });
@@ -61,9 +64,17 @@ function Results() {
           return haystack.includes(normalizedQuery);
         });
 
-        setWgerResults(filtered);
+        if (filtered.length === 0) {
+          setWgerError('No results found. Try a different search term.');
+          setWgerResults([]);
+        } else {
+          setWgerResults(filtered);
+          setWgerError(null);
+        }
       } catch (error) {
         console.error('Error searching WGER:', error);
+        setWgerError('Network error. Please try again.');
+        setWgerResults([]);
       } finally {
         setLoading(false);
       }
@@ -79,21 +90,40 @@ function Results() {
     const fetchUserExercises = async () => {
       if (!user || !searchQuery) {
         setUserResults([]);
+        setUserError(null);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('user_exercises')
-        .select('*')
-        .eq('user_id', user.id)
-        .ilike('name', `%${searchQuery}%`);
+      try {
+        setLoading(true);
+        setUserError(null);
+        const { data, error } = await supabase
+          .from('user_exercises')
+          .select('*')
+          .eq('user_id', user.id)
+          .ilike('name', `%${searchQuery}%`);
 
-      if (error) {
-        console.error('Error searching user_exercises:', error);
-        return;
+        if (error) {
+          console.error('Error searching user_exercises:', error);
+          setUserError('Network error. Please try again.');
+          setUserResults([]);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          setUserError('No saved exercises found.');
+          setUserResults([]);
+        } else {
+          setUserResults(data);
+          setUserError(null);
+        }
+      } catch (error) {
+        console.error('Error fetching user exercises:', error);
+        setUserError('Network error. Please try again.');
+        setUserResults([]);
+      } finally {
+        setLoading(false);
       }
-
-      setUserResults(data || []);
     };
 
     if (source === 'saved') {
@@ -117,19 +147,19 @@ function Results() {
 
         const response = await fetch(
           `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-            searchQuery 
+            searchQuery
           )}`
         );
 
         if (!response.ok) {
-          throw new Error('No additional info found.');
+          throw new Error('No results found for this search.');
         }
 
         const data = await response.json();
         setInfoResult(data);
       } catch (error) {
         console.error('Error fetching info:', error);
-        setInfoError(error.message || 'Could not load info.');
+        setInfoError('Network error. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -184,12 +214,16 @@ function Results() {
     }
   };
 
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
   return (
     <div>
       <NavBar />
       <div className="mt-6 p-4 bg-white rounded-2xl shadow-md">
         <h1 className="text-2xl font-bold mb-4">
-          Search Results for “{searchQuery}”
+          Search Results for "{searchQuery}"
         </h1>
 
         <div className="flex gap-2 mb-4">
@@ -219,80 +253,125 @@ function Results() {
           </button>
         </div>
 
-        {loading && <p>Loading...</p>}
+        {loading && <p className="text-gray-600 text-center py-8">Loading...</p>}
 
-        {!loading && source === 'wger' && wgerResults.map((exercise) => {
-          const englishName =
-            exercise.translations.find((t) => t.language === 2)?.name ||
-            exercise.name;
+        {/* WGER Results */}
+        {!loading && source === 'wger' && (
+          <>
+            {wgerError && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 rounded-lg">
+                <p className="text-red-700 font-semibold mb-2">{wgerError}</p>
+                {wgerError.includes('Network') && (
+                  <button
+                    onClick={handleRetry}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                  >
+                    Try Again
+                  </button>
+                )}
+              </div>
+            )}
+            {!wgerError && wgerResults.map((exercise) => {
+              const englishName =
+                exercise.translations.find((t) => t.language === 2)?.name ||
+                exercise.name;
 
-          return (
-            <div key={exercise.id} className="flex mb-4">
-              <div className="p-4 bg-gray-100 rounded-lg shadow-sm w-full">
-                <h3 className="text-lg font-semibold">{englishName}</h3>
+              return (
+                <div key={exercise.id} className="flex mb-4">
+                  <div className="p-4 bg-gray-100 rounded-lg shadow-sm w-full">
+                    <h3 className="text-lg font-semibold">{englishName}</h3>
+                    <h5>
+                      Muscles:{' '}
+                      {exercise.muscles?.length > 0
+                        ? exercise.muscles.map((m) => m.name_en).join(', ')
+                        : 'N/A'}
+                    </h5>
+                    <h5>Category: {exercise.category?.name || 'N/A'}</h5>
+                    {exercise.images?.length > 0 && (
+                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {exercise.images.map((image) => (
+                          <img
+                            key={image.id}
+                            src={image.image}
+                            alt={englishName}
+                            className="w-full h-48 object-cover rounded-md mb-2"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-gray-700">
+                      Description: {exercise.description}
+                    </p>
+                    <button
+                      className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                      onClick={() => handleAddExercise(exercise)}
+                    >
+                      Add to My Exercises
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* Saved Exercises */}
+        {!loading && source === 'saved' && (
+          <>
+            {userError && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 rounded-lg">
+                <p className="text-red-700 font-semibold mb-2">{userError}</p>
+                {userError.includes('Network') && (
+                  <button
+                    onClick={handleRetry}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                  >
+                    Try Again
+                  </button>
+                )}
+              </div>
+            )}
+            {!userError && userResults.map((exercise) => (
+              <div key={exercise.id} className="p-4 bg-gray-100 rounded-lg shadow-sm mb-4">
+                <h3 className="text-lg font-semibold">{exercise.name}</h3>
+                <h5>Category: {exercise.category || 'N/A'}</h5>
                 <h5>
                   Muscles:{' '}
-                  {exercise.muscles?.length > 0
-                    ? exercise.muscles.map((m) => m.name_en).join(', ')
+                  {Array.isArray(exercise.muscles)
+                    ? exercise.muscles.join(', ')
                     : 'N/A'}
                 </h5>
-                <h5>Category: {exercise.category?.name || 'N/A'}</h5>
-                {exercise.images?.length > 0 && (
+                {Array.isArray(exercise.images) && exercise.images.length > 0 && (
                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {exercise.images.map((image) => (
+                    {exercise.images.map((url, idx) => (
                       <img
-                        key={image.id}
-                        src={image.image}
-                        alt={englishName}
+                        key={idx}
+                        src={url}
+                        alt={exercise.name}
                         className="w-full h-48 object-cover rounded-md mb-2"
                       />
                     ))}
                   </div>
                 )}
-                <p className="text-gray-700">
-                  Description: {exercise.description}
-                </p>
-                <button
-                  className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                  onClick={() => handleAddExercise(exercise)}
-                >
-                  Add to My Exercises
-                </button>
+                <p className="text-gray-700">Description: {exercise.description}</p>
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </>
+        )}
 
-        {!loading && source === 'saved' && userResults.map((exercise) => (
-          <div key={exercise.id} className="p-4 bg-gray-100 rounded-lg shadow-sm mb-4">
-            <h3 className="text-lg font-semibold">{exercise.name}</h3>
-            <h5>Category: {exercise.category || 'N/A'}</h5>
-            <h5>
-              Muscles:{' '}
-              {Array.isArray(exercise.muscles)
-                ? exercise.muscles.join(', ')
-                : 'N/A'}
-            </h5>
-            {Array.isArray(exercise.images) && exercise.images.length > 0 && (
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {exercise.images.map((url, idx) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={exercise.name}
-                    className="w-full h-48 object-cover rounded-md mb-2"
-                  />
-                ))}
-              </div>
-            )}
-            <p className="text-gray-700">Description: {exercise.description}</p>
-          </div>
-        ))}
-
+        {/* Info Results */}
         {!loading && source === 'info' && (
           <div className="p-4 bg-gray-100 rounded-lg shadow-sm mt-4">
             {infoError && (
-              <p className="text-red-600 text-sm">{infoError}</p>
+              <div className="p-4 bg-red-100 border border-red-400 rounded-lg">
+                <p className="text-red-700 font-semibold mb-2">{infoError}</p>
+                <button
+                  onClick={handleRetry}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                >
+                  Try Again
+                </button>
+              </div>
             )}
             {!infoError && !infoResult && (
               <p className="text-gray-700 text-sm">No additional information available.</p>

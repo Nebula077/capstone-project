@@ -1,4 +1,3 @@
-import React from 'react'
 import { useState } from 'react'
 import {
   CButton,
@@ -11,14 +10,11 @@ import {
   CNavbarNav,
   CNavbarToggler,
   CNavItem,
-  CNavLink,
   CDropdown,
-  CDropdownDivider,
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
 } from '@coreui/react'
-import { IoNotifications } from 'react-icons/io5'
 import { CiUser } from 'react-icons/ci'
 import '@coreui/coreui/dist/css/coreui.min.css'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -65,7 +61,7 @@ function NavBar() {
                 </Link>
               </CNavItem>
               <CNavItem>
-                <Link to="/add-exercise" className="nav-link">
+                <Link to="/add-exercise" className="nav-link" hidden>
                   Add Exercise
                 </Link>
               </CNavItem>
@@ -77,14 +73,13 @@ function NavBar() {
               <CDropdown variant="nav-item" popper={false}>
                 <CDropdownToggle color="secondary">More</CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem component={Link} to="/add-exercise">
+                  <CDropdownItem onClick={() => navigate('/add-exercise')}>
                     Add Exercise
                   </CDropdownItem>
-                  <CDropdownItem component={Link} to="/exercises">
-                    View Exercises
+                  <CDropdownItem onClick={() => navigate('/workout')}>
+                    My Workouts
                   </CDropdownItem>
-                  <CDropdownDivider />
-                  <CDropdownItem component={Link} to="/login">
+                  <CDropdownItem hidden onClick={() => navigate(user ? '/profile' : '/login')}>
                     {user ? "Profile" : "Login"}
                   </CDropdownItem>
                 </CDropdownMenu>
@@ -104,21 +99,10 @@ function NavBar() {
             </CForm>
             <div className="d-flex gap-3 align-items-center">
               <CButton
-                color="link"
-                className="position-relative"
                 style={{ fontSize: '1.5rem' }}
+                onClick={() => navigate(user ? "/profile" : "/login")}
               >
-                <IoNotifications />
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  3
-                </span>
-              </CButton>
-              <CButton
-                style={{ fontSize: '1.5rem' }}
-                component={Link}
-                to="/profile"
-              >
-                <CiUser />
+                <CiUser className="text-dark" />
               </CButton>
             </div>
           </CCollapse>

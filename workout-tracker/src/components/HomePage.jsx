@@ -1,129 +1,136 @@
-import React from 'react'
 import NavBar from './NavBar';
 import { useAuth } from '../context/AuthContext.jsx';
 import dumbbell from '../assets/dumbbell.png';
 import { useState } from 'react';
-import { useEffect } from 'react';
-import AddExercise from './AddExercise.jsx';
 import Footer from './Footer.jsx';
-import Exercises from './Exercises.jsx';
 import supabase from '../../supabase-client';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 function HomePage() {
 
   const { user, profile, signOut } = useAuth();
   const displayName = profile?.username || user?.user_metadata?.username || user?.user_metadata?.full_name || user?.email;
   const navigate = useNavigate();
-  const [ exercise, setExercise ] = useState({
-    id: 1,
-    name: 'Yoga',
-    date: '25/02/2026',
-    duration: '30 minutes',
-    notes: 'Relaxing session focusing on flexibility and mindfulness.',
+  const queryClient = useQueryClient();
+  const [ showAllPrevious, setShowAllPrevious] = useState(false);
+  const [ expandedPrevious, setExpandedPrevious] = useState(new Set());
+  const [exercise, setExercise] = useState({
+    name: '',
+    category: '',
+    description: '',
   });
-  const [ selectedExercises, setSelectedExercises ] = useState([]);
-  const [ completedExercises, setCompletedExercises ] = useState([]);
-  const [ completedSavedExercises, setCompletedSavedExercises ] = useState([]);
-  const [userActivity, setUserActivity] = useState([]);
-  const [showAllPrevious, setShowAllPrevious] = useState(false);
-  const [expandedPrevious, setExpandedPrevious] = useState(new Set());
 
   const fetchScheduledExercises = async () => {
+    if (!user) return [];
     const { data, error } = await supabase
       .from('user_exercises')
       .select('*')
       .eq('user_id', user.id)
       .eq('completed', false);       
-    if (error) {
-      console.error('Error fetching scheduled exercises:', error);
-    } else {
-      setSelectedExercises(data);
-    }
+    if (error) throw error;
+    return data || [];
   };
-  useEffect(() => {
-    if (user) {
-      fetchScheduledExercises();
-    } else {
-      setSelectedExercises([]);
-    }
-  }, [user]);
-  const [ createdExercises, setCreatedExercises ] = useState([]);
-  
-
-  useEffect(() => {
-    if (!user) {
-      setCreatedExercises([]);
-      return;
-    }
-    fetchSavedExercises();
-  }, [user]);
 
   const fetchSavedExercises = async () => {
-    const { data, error } = await supabase.from('exercises')
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('exercises')
       .select('*')
       .eq('user_id', user.id);
-    if (error) {
-      console.error('Error fetching saved exercises:', error);
-    } else {
-      setCreatedExercises(data);
-    }
+    if (error) throw error;
+    return data || [];
   };
-  const fetchCompletedExercises = async () => {
-    if (!user) return; 
 
+  const fetchCompletedExercises = async () => {
+    if (!user) return [];
     const { data, error } = await supabase
       .from('user_exercises')
       .select('*')
       .eq('user_id', user.id)
       .eq('completed', true)
       .order('completed_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching completed exercises:', error);
-    } else {
-      setCompletedExercises(data);
-      setUserActivity(data);  
-    }
+    if (error) throw error;
+    return data || [];
   };
 
-  useEffect(() => {
-    if (!user) return; 
-    fetchCompletedExercises();
-  }, [user]);
+  const { 
+    data: selectedExercises = [], 
+    isLoading: scheduledLoading, 
+    error: scheduledError 
+  } = useQuery({
+    queryKey: ['scheduledExercises', user?.id],
+    queryFn: fetchScheduledExercises,
+    enabled: !!user,
+  });
 
-  const handleCompleteSavedExercise = async (exerciseId) => {
-    const { error } = await supabase
-      .from('exercises')
-      .update({ completed: true, completed_at: new Date().toISOString() })
-      .eq('id', exerciseId)
-      .eq('user_id', user.id);
+  const { 
+    data: createdExercises = [], 
+    isLoading: savedLoading, 
+    error: savedError 
+  } = useQuery({
+    queryKey: ['savedExercises', user?.id],
+    queryFn: fetchSavedExercises,
+    enabled: !!user,
+  });
 
-    if (error) {
+  const { 
+    data: completedExercises = [], 
+    isLoading: completedLoading, 
+    error: completedError 
+  } = useQuery({
+    queryKey: ['completedExercises', user?.id],
+    queryFn: fetchCompletedExercises,
+    enabled: !!user,
+  });
+  
+  const completeSavedExerciseMutation = useMutation({
+    mutationFn: async (exerciseId) => {
+      const { error } = await supabase
+        .from('exercises')
+        .update({ completed: true, completed_at: new Date().toISOString() })
+        .eq('id', exerciseId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['savedExercises', user?.id]);
+      queryClient.invalidateQueries(['completedExercises', user?.id]);
+    },
+    onError: (error) => {
       console.error('Error marking exercise complete:', error);
       alert('Could not mark as complete. Please try again.');
-      return;
-    }
-    setCreatedExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
+    },
+  });
+
+  const completeScheduledExerciseMutation = useMutation({
+    mutationFn: async (exerciseId) => {
+      const { error } = await supabase
+        .from('user_exercises')
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', exerciseId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['scheduledExercises', user?.id]);
+      queryClient.invalidateQueries(['completedExercises', user?.id]);
+    },
+    onError: (error) => {
+      console.error('Error marking exercise complete:', error);
+      alert('Could not mark as complete. Please try again.');
+    },
+  });
+
+  const handleCompleteSavedExercise = (exerciseId) => {
+    completeSavedExerciseMutation.mutate(exerciseId);
   };
-  const handleComplete = async (exerciseId) => {
-    const { error } = await supabase
-      .from('user_exercises')
-      .update({
-        completed: true,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', exerciseId)
-      .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Error marking exercise complete:', error);
-      alert('Could not mark as complete. Please try again.');
-      return;
-    }
-
-    // Remove from current list so it disappears from the home screen
-    setSelectedExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
+  const handleComplete = (exerciseId) => {
+    completeScheduledExerciseMutation.mutate(exerciseId);
   };
 
   const togglePreviousExpand = (exerciseId) => {
@@ -138,31 +145,60 @@ function HomePage() {
     });
   };
 
+  if (scheduledLoading || savedLoading || completedLoading) {
+    return (
+      <div className="p-4 bg-gray-100 min-h-screen min-w-full">
+        <NavBar />
+        <div className="flex items-center justify-center mt-10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading your workout data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (scheduledError || savedError || completedError) {
+    return (
+      <div className="p-4 bg-gray-100 min-h-screen min-w-full">
+        <NavBar />
+        <div className="mt-10 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <p className="font-bold">Error loading data</p>
+          <p>{scheduledError?.message || savedError?.message || completedError?.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 bg-gray-100 min-h-screen">
+    <div className="p-4 bg-gray-100 min-h-screen relative font-serif">
       <NavBar />
       <div>
-      <h1 className="text-2xl font-bold mb-4">Welcome to Workout Tracker</h1>
+      <h1 className="text-2xl font-bold mb-2 font-mono">Welcome to Workout Tracker</h1>
       <p className="text-gray-700">Track your workouts and stay fit!</p>
       {user && (
         <div className="mt-4">
-          <p className="text-gray-700">Logged in as: {displayName}</p>
-          <button onClick={signOut} className="mt-2 bg-red-500 text-red-100 px-4 py-2 rounded hover:bg-red-600">
+          <p className=" lg:absolute lg:top-20 lg:left-4 bg-purple-950 px-4 py-2 rounded text-white mt-2 w-auto">Welcome Back {displayName.toUpperCase()}</p>
+          <button onClick={signOut} className="mt-2 bg-red-500 text-red-100 px-4 py-2 rounded lg:absolute lg:top-20 lg:right-4 hover:bg-red-600 ">
             Sign Out
           </button>
         </div>
       )}
       </div>
-      <div className='mt-6 p-4 bg-white rounded-lg shadow-md'>
+      <div className='mt-6 p-4 bg-white rounded-lg shadow-md font-serif'>
         <div key={exercise.id}>
-          <h2 className='text-xl font-semibold mb-2 inline'><img src={dumbbell} alt="dumbbell" className='logo w-40 h-20 inline mr-2 sm:mr-4 xs:w-20 xs:h-10 sm:h-10 sm:w-15 lg:w-50 lg:h-20 md:w-40 md:h-20 lg:mr-6' />Scheduled Exercises</h2>
-          <h4>Upcoming Workouts</h4>
-          <div className='flex mx-auto p-4 bg-white rounded-lg shadow-md mb-4 border-l-4 border-blue-500'>
-              <div className='flex-4 mt-3 mr-4'>
+          <div className='bg-sky-300 rounded-lg p-2 mb-2 items-center justify-between'>
+          <h2 className='text-xl font-semibold mb-2 inline rounded-lg'><img src={dumbbell} alt="dumbbell" className='logo rounded-lg w-40 h-20 inline mr-2 sm:mr-4 xs:w-20 xs:h-10 sm:h-10 sm:w-15 lg:w-50 lg:h-20 md:w-40 md:h-20 lg:mr-6' />Scheduled Exercises</h2>
+          </div>
+          <h4 className='text-xl bg-amber-100 m-1.5 rounded-2xl'>Upcoming Workouts</h4>
+          <div className='flex mx-auto lg:p-4 lg:bg-white lg:rounded-lg lg:shadow-md mb-4 lg:border-l-4 lg:border-blue-500'>
+              <div className='flex-4 mt-3 mr-1 ml-0.5'>
                 {selectedExercises.length > 0 ? (
                   selectedExercises.map((ex) => (
-                    <div key={ex.id} className='p-4 rounded-lg shadow-sm mb-4 flex'>
-                      <div className='p-4 bg-slate-100 rounded-lg shadow-sm mb-4 flex-4'>
+                    <div key={ex.id} className='lg:p-4 lg:rounded-lg lg:shadow-sm mb-2 lg:flex sm:block lg:border-l-4 lg:border-green-500'>
+                      <div className='p-4 bg-slate-100  rounded-lg shadow-sm mb-4 border flex-4'>
                         <h3 className='text-lg font-semibold'>{ex.name}</h3>
                         <p className='text-gray-700'>Category: {ex.category}</p>
                         <p className='text-gray-700'>Duration: {ex.duration}</p>
@@ -188,16 +224,16 @@ function HomePage() {
 
                         <span className='text-red-500'>For more details search the exercise</span>
                       </div>
-                      <div className='flex-1 gap-2 mt-5 justify-end flex'>
+                      <div className='flex-1 gap-2 mt-5 lg:justify-end lg:flex sm:mt-6 sm:mb-3 '>
                         <div>
                         <input type="checkbox" className="w-4 h-4 flex-initial text-green-500 bg-gray-100 border-gray-300 rounded focus:ring-green-500" />
                         </div>
                         <div>
-                        <button className='bg-green-500 flex-initial text-white px-4 py-2 rounded hover:bg-green-600 p-2'
-                          onClick={() => handleComplete(ex.id)}
-                        >
-                          Complete
-                        </button>
+                          <button className='bg-green-500 flex-initial text-white px-4 py-2 rounded hover:bg-green-600 p-2'
+                            onClick={() => handleComplete(ex.id)}
+                          >
+                            Complete
+                          </button>
                         </div>
                       </div>
 
@@ -220,7 +256,7 @@ function HomePage() {
           <div>
             {createdExercises.length > 0 ? (
               createdExercises.map((ex) => (
-                <div key={ex.id} className='flex mx-auto p-4 bg-white rounded-lg shadow-md mb-4 border-l-4 border-blue-500'>
+                <div key={ex.id} className='lg:flex sm:block mx-auto p-4 bg-white rounded-lg shadow-md mb-4 border-l-4 border-blue-500'>
                 <div className='flex-4 p-4 bg-slate-100 rounded-lg shadow-md mb-4 border-l-4 border-blue-500'>
                   <h3 className='text-lg font-semibold'>{ex.name}</h3>
                   <p className='text-gray-700'>Description: {ex.description}</p>
@@ -269,7 +305,6 @@ function HomePage() {
             <p className='text-center text-sm'>No previous workouts found. Check back later!</p>
           ) : (
             <div className='space-y-4'>
-              {/* Summary Stats */}
               <div className='bg-purple-400 rounded-lg p-4 text-center'>
                 <p className='text-sm opacity-90'>Total Completed</p>
                 <p className='text-2xl font-bold'>{completedExercises.length}</p>
