@@ -79,7 +79,7 @@ function NavBar() {
                   <CDropdownItem onClick={() => navigate('/workout')}>
                     My Workouts
                   </CDropdownItem>
-                  <CDropdownItem hidden onClick={() => navigate(user ? '/profile' : '/login')}>
+                  <CDropdownItem hidden onClick={() => navigate(user ? '/profile' : '/signup')}>
                     {user ? "Profile" : "Login"}
                   </CDropdownItem>
                 </CDropdownMenu>
