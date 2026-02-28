@@ -7,20 +7,20 @@ A modern, responsive web application for tracking and managing your fitness work
 - **User Authentication**: Email/password signup and username-based login powered by Supabase (profiles stored in a `profiles` table with username, full name, and bio)
 - **Exercise Library**: Browse exercises from the WGER public API with images, muscles, categories, and pagination (25 per page)
 - **Search & Results**:
-	- Global search from the navbar
-	- Results page with three tabs: **WGER**, **My Saved**, and **Info** (Wikipedia summary like "push up exercise")
+  - Global search from the navbar
+  - Results page with three tabs: **WGER**, **My Saved**, and **Info** (Wikipedia summary like "push up exercise")
 - **Home Dashboard**:
-	- Scheduled workouts with details and images
-	- Saved exercises with completion tracking
-	- Previous workouts dropdown with "Show More" and per-item details
+  - Scheduled workouts with details and images
+  - Saved exercises with completion tracking
+  - Previous workouts dropdown with "Show More" and per-item details
 - **Workout Session**:
-	- Log duration, sets/reps, and priority
-	- Mark scheduled exercises as completed
+  - Log duration, sets/reps, and priority
+  - Mark scheduled exercises as completed
 - **Profile & Activity**:
-	- Profile details with edit flow
-	- Completed activities dropdown with totals and details
-	- Recent activity dropdown (first two items + "Show More")
-	- Preferred categories aggregated from saved and completed exercises
+  - Profile details with edit flow
+  - Completed activities dropdown with totals and details
+  - Recent activity dropdown (first two items + "Show More")
+  - Preferred categories aggregated from saved and completed exercises
 - **Responsive Design**: Fully responsive UI for desktop, tablet, and mobile
 - **Fast Performance**: Built with Vite for lightning-fast development and production builds
 - **Modern Styling**: Tailwind CSS with utility-first styling
