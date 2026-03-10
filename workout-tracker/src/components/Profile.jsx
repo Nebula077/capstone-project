@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import supabase from '../../supabase-client';
 import { useState, useEffect } from 'react';
 import Footer from './Footer.jsx';
+import LineChart from './LineChart.jsx';
 import { Link } from "react-router-dom";
 
 function Profile() {
@@ -222,6 +223,9 @@ function Profile() {
                     </div>
                     <div className='mt-6 rounded-2xl shadow p-4 bg-green-300 text-white'>
                         <h3 className='text-lg font-semibold mb-4 text-center'>Your Recent Activity</h3>
+                        <div className='mb-6'>
+                            <LineChart activities={userActivity} />
+                        </div>
                         {userActivity.length === 0 ? (
                             <p className='text-center text-sm'>No recent activity. Start working out to see your progress here!</p>
                         ) : (
